@@ -4,3 +4,4 @@ opencv-python
 opencv-contrib-python 
 tensorflow
 Pillow
+flask-cors
