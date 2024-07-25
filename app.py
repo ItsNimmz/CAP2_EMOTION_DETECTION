@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import cv2
 import numpy as np
 from tensorflow.keras.models import load_model 
@@ -52,6 +52,11 @@ def detect_emotion_route():
         return jsonify({'emotions': emotions}), 200
     else:
         return jsonify({'error': 'No faces detected'}), 400
+    
+
+@app.route('/')
+def home():
+   return render_template('index.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
