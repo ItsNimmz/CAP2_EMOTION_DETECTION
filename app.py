@@ -42,8 +42,8 @@ def detect_emotion_route():
     if 'image' not in request.files:
         return jsonify({'error': 'No image provided'}), 400
 
-    image_file = request.files['image']
-    image = np.frombuffer(image_file.read(), np.uint8)
+    x = request.files['image']
+    image = np.frombuffer(x.read(), np.uint8)
     image = cv2.imdecode(image, cv2.IMREAD_COLOR)
 
     emotions = detect_emotion(image)
