@@ -10,8 +10,9 @@ app = Flask(__name__)
 
 # Load the pre-trained model for facial expression recognition
 model = load_model('emotion_model.h5')
-# Enable CORS for the /detect_emotion route
-CORS(app, resources={r"/detect_emotion": {"origins": "*"}})
+
+# Enable CORS for all routes
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Load face detection model
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
