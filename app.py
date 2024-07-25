@@ -7,7 +7,7 @@ from PIL import Image
 from flask_cors import CORS
 app = Flask(__name__)
 
-CORS(app) 
+
 # Load the pre-trained model for facial expression recognition
 model = load_model('emotion_model.h5')
 # Enable CORS for the /detect_emotion route
