@@ -38,6 +38,7 @@ def detect_emotion(image):
 
 @app.route('/detect_emotion', methods=['POST'])
 def detect_emotion_route():
+    print('heree..............')
     if 'image' not in request.files:
         return jsonify({'error': 'No image provided'}), 400
 
