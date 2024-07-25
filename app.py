@@ -4,12 +4,15 @@ import numpy as np
 from tensorflow.keras.models import load_model 
 from io import BytesIO
 from PIL import Image
-# from flask_cors import CORS
+from flask_cors import CORS
 app = Flask(__name__)
 
-# CORS(app) 
+CORS(app) 
 # Load the pre-trained model for facial expression recognition
 model = load_model('emotion_model.h5')
+# Enable CORS for the /detect_emotion route
+CORS(app, resources={r"/detect_emotion": {"origins": "*"}})
+
 # Load face detection model
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
