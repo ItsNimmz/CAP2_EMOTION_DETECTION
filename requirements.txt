@@ -6,3 +6,9 @@ tensorflow
 Pillow
 flask-cors
 SQLAlchemy
+pandas
+scikit-learn
+scipy
+rapidfuzz
+spotipy
+psutil
