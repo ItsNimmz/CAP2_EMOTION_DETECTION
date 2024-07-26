@@ -16,6 +16,7 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import os
 import logging
 import psutil
+import requests
 
 app = Flask(__name__)
 
@@ -144,6 +145,27 @@ sp = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials(
     client_id='33923fe14a9d46049601501e59066d27',
     client_secret='52f295db11274f6db62ef7585d7e1cd1'))
 
+# Function to search for a song on Spotify
+
+def search_song_on_spotify(token, query):
+    url = 'https://api.spotify.com/v1/search'
+    headers = {'Authorization': f'Bearer {token}'}
+    params = {'q': query, 'type': 'track', 'limit': 1}  # Added 'limit': 1 to reduce response size
+    response = requests.get(url, headers=headers, params=params)
+    response_data = response.json()
+    
+    # Debugging Information
+    print("Response Status Code:", response.status_code)
+    print("Response Data:", response_data)
+    
+    # Check if there are any tracks in the response
+    if 'tracks' in response_data and 'items' in response_data['tracks'] and len(response_data['tracks']['items']) > 0:
+        return True
+    else:
+        return False
+
+
+
 # Define features for scaling and calculations
 features = ['popularity', 'danceability', 'energy', 'loudness', 'speechiness', 
             'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo']
@@ -157,7 +179,6 @@ tracks_data = tracks_data[(tracks_data['popularity'] > 40) & (tracks_data['instr
 logging.info("Track data loaded and processed")
 log_memory_usage()
 
-#Function to fetch a song from Spotify
 def get_song_from_spotify(song_name, artist_name=None):
     try:
         search_query = song_name if not artist_name else f"{song_name} artist:{artist_name}"
@@ -240,6 +261,19 @@ def index():
         weights = [request.form.get(f"weight_{feature}", 1/len(features)) for feature in features]
         
         recommendations, message = recommend_songs(song_name, artist_name, num_songs_to_output, scaler_choice, *weights)
+
+        # Check if song exists on Spotify
+        spotify_token = '33923fe14a9d46049601501e59066d27'  # Replace with your actual Spotify token
+        query = f"{song_name}"
+        song_exists = search_song_on_spotify(spotify_token, query)
+        
+        if song_exists:
+            message = 'Song found on Spotify!'
+            print("In true")
+        else:
+            message = 'Song not found on Spotify.'
+            print("In false")
+            return(render_template("index.html"))
         
         if not isinstance(recommendations, pd.DataFrame):
             recommendations = pd.DataFrame(columns=['name', 'artists'])  # Ensure recommendations is a DataFrame
