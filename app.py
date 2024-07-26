@@ -19,7 +19,7 @@ db = SQLAlchemy(app)
 class UserGenres(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), nullable=False)
-    genres = db.Column(db.String(500), nullable=False)
+    genres = db.Column(db.String(500), nullable=True)
 
     def __init__(self, username, genres):
         self.username = username
