@@ -5,7 +5,64 @@ from tensorflow.keras.models import load_model
 from io import BytesIO
 from PIL import Image
 from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
+
 app = Flask(__name__)
+
+# Configure the SQLAlchemy part of the application instance
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///spotyfyuser.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+# Define the UserGenres model
+class UserGenres(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), nullable=False)
+    genres = db.Column(db.String(500), nullable=False)
+
+    def __init__(self, username, genres):
+        self.username = username
+        self.genres = genres
+
+
+# Create the database and the table
+with app.app_context():
+    db.create_all()
+
+@app.route('/save-genres', methods=['POST'])
+def save_genres():
+    data = request.get_json()
+    username = data.get('username')
+    genres = data.get('genres')
+    
+    if username and genres:
+        genres_str = ','.join(genres)  # Convert list to comma-separated string
+        
+        # Check if a row with the same username exists
+        existing_user = UserGenres.query.filter_by(username=username).first()
+        if existing_user:
+            # If exists, remove the existing row
+            db.session.delete(existing_user)
+            db.session.commit()
+        
+        # Insert the new row
+        new_user_genres = UserGenres(username=username, genres=genres_str)
+        db.session.add(new_user_genres)
+        db.session.commit()
+        
+        return jsonify({'message': 'Genres saved successfully'}), 200
+    else:
+        return jsonify({'message': 'Invalid data'}), 400
+
+@app.route('/get-genres/<username>', methods=['GET'])
+def get_genres(username):
+    user_genres = UserGenres.query.filter_by(username=username).first()
+    if user_genres:
+        genres_list = user_genres.genres.split(',')  # Convert string back to list
+        return jsonify({'username': username, 'genres': genres_list}), 200
+    else:
+        return jsonify({'message': 'User not found'}), 404
 
 
 # Load the pre-trained model for facial expression recognition
