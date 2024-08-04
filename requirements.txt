@@ -12,3 +12,4 @@ scipy
 rapidfuzz
 spotipy
 psutil
+flask_sqlalchemy
