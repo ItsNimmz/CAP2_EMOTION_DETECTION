@@ -113,8 +113,9 @@ def detect_emotion_route():
         print('heree..............')
         if 'image' not in request.files:
             return jsonify({'error': 'No image provided'}), 400
-        # x = request.files['image']
-        return jsonify({'Error: {e}': 'Server error'}), 200
+        x = request.files['image']
+        return jsonify({'Error--': x}), 200
+
         # image = np.frombuffer(x.read(), np.uint8)
         # image = cv2.imdecode(image, cv2.IMREAD_COLOR)
 
