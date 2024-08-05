@@ -127,7 +127,7 @@ def detect_emotion_route():
         #     return jsonify({'error': 'No faces detected'}), 400
     except Exception as e:
         print(f'Error: {e}')
-        return jsonify({'Error:::': e}), 500
+        return jsonify({'Error:::': str(e)}), 500
 
 @app.route('/')
 def home():
