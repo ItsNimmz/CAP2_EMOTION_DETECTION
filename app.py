@@ -259,31 +259,33 @@ def index():
     if request.method == "POST":
         song_name = request.form.get("song_name")
         artist_name = request.form.get("artist_name")
-        num_songs_to_output = request.form.get("num_songs_to_output", 5)
+        num_songs_to_output = int(request.form.get("num_songs_to_output", 5))
         scaler_choice = request.form.get("scaler_choice")
-        weights = [request.form.get(f"weight_{feature}", 1/len(features)) for feature in features]
+        weights = [float(request.form.get(f"weight_{feature}", 1/len(features))) for feature in features]
         
         recommendations, message = recommend_songs(song_name, artist_name, num_songs_to_output, scaler_choice, *weights)
-
-        # Check if song exists on Spotify
-        spotify_token = '33923fe14a9d46049601501e59066d27'  # Replace with your actual Spotify token
-        query = f"{song_name}"
-        song_exists = search_song_on_spotify(spotify_token, query)
-        
-        if song_exists:
-            message = 'Song found on Spotify!'
-            print("In true")
-        else:
-            message = 'Song not found on Spotify.'
-            print("In false")
-            return(render_template("index.html"))
         
         if not isinstance(recommendations, pd.DataFrame):
             recommendations = pd.DataFrame(columns=['name', 'artists'])  # Ensure recommendations is a DataFrame
-            
-        return render_template("rec.html", recommendations=recommendations.to_dict(orient='records'), message=message)
+        
+        # Convert DataFrame to a list of dictionaries
+        recommendations_list = recommendations.to_dict(orient='records')
+        
+        # Create the response dictionary
+        response = {
+            'recommendations': recommendations_list,
+            'message': message
+        }
+        
+        return jsonify(response)
     
-    return render_template("rec.html", recommendations=[], message="")
+    # For GET requests or when no POST data is provided
+    response = {
+        'recommendations': [],
+        'message': ""
+    }
+    
+    return jsonify(response)
 
 if __name__ == '__main__':
     app.run(debug=True)
