@@ -9,39 +9,74 @@
             font-family: Arial, sans-serif;
             margin: 20px;
             padding: 20px;
+            background-color: #121212; /* Dark background */
+            color: #ffffff; /* Light text color */
+        }
+        h1 {
+            color: #1db954; /* Spotify green */
         }
         form {
             margin-bottom: 20px;
+            background-color: #282828; /* Form background */
+            padding: 20px;
+            border-radius: 8px;
         }
         .form-group {
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
         .form-group label {
             display: block;
             margin-bottom: 5px;
+            color: #b3b3b3; /* Light grey for labels */
         }
         .form-group input,
         .form-group select {
             width: 100%;
-            padding: 8px;
+            padding: 10px;
             box-sizing: border-box;
+            background-color: #333333; /* Input background */
+            color: #ffffff; /* Text color */
+            border: 1px solid #444444; /* Border color */
+            border-radius: 4px;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #1db954; /* Highlight color */
+            outline: none;
         }
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 20px;
         }
         table, th, td {
-            border: 1px solid #ddd;
+            border: 1px solid #444444; /* Border color */
         }
         th, td {
-            padding: 8px;
+            padding: 10px;
             text-align: left;
         }
         th {
-            background-color: #f2f2f2;
+            background-color: #282828; /* Header background */
+            color: #b3b3b3; /* Light grey for header text */
+        }
+        tr:nth-child(even) {
+            background-color: #333333; /* Alternating row color */
         }
         .message {
-            color: red;
+            color: #ff3860; /* Error color */
+            margin-top: 20px;
+        }
+        button {
+            background-color: #1db954; /* Spotify green */
+            color: #ffffff; /* Text color */
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #1ed760; /* Lighter green on hover */
         }
     </style>
 </head>
