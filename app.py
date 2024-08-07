@@ -87,6 +87,17 @@ face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fronta
 # Define emotion labels
 emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
 
+
+emotion_to_genre = {
+    'Angry': ['Rock', 'Metal', 'Punk', 'Hard Rock', 'Alternative'],
+    'Disgust': ['Heavy Metal', 'Industrial', 'Gothic', 'Darkwave', 'EBM'],
+    'Fear': ['Thriller', 'Dark Ambient', 'Experimental', 'Post-Rock', 'Noise'],
+    'Happy': ['Pop', 'Dance', 'Reggae', 'Indie Pop', 'Funk'],
+    'Sad': ['Blues', 'Folk', 'Soul', 'Country', 'Acoustic'],
+    'Surprise': ['Electronic', 'Jazz', 'Experimental', 'Funk', 'Psychedelic'],
+    'Neutral': ['Classical', 'Instrumental', 'Chillout', 'Ambient', 'New Age']
+}
+
 def detect_emotion(image):
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
@@ -121,13 +132,20 @@ def detect_emotion_route():
         emotions = detect_emotion(image)
 
         if emotions:
-            return emotions, 200
+            # Map the detected emotions to genres
+            genre_results = []
+            for emotion in emotions:
+                genres = emotion_to_genre.get(emotion, ['Unknown'])
+                genre_results.append(f'{emotion}: {", ".join(genres)}')
+
+            response = '; '.join(genre_results)
+            return response, 200
         else:
             return 'No faces detected', 400
     except Exception as e:
-        print(f'Error: {e}')
+        logging.error(f'Error: {e}')
         return 'Something went wrong', 500
-
+    
 @app.route('/')
 def home():
    return render_template('index.html')
