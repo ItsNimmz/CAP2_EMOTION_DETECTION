@@ -131,17 +131,33 @@ def detect_emotion_route():
 
         emotions = detect_emotion(image)
 
-        if emotions:
-            # Map the detected emotions to genres
-            genre_results = []
-            for emotion in emotions:
-                genres = emotion_to_genre.get(emotion, ['Unknown'])
-                genre_results.append(f'{emotion}: {", ".join(genres)}')
-
-            response = '; '.join(genre_results)
-            return response, 200
-        else:
+        if not emotions:
             return 'No faces detected', 400
+        
+        
+        data = request.get_json()
+        username = data.get('username')
+        if not username:
+            return 'Username not provided', 400
+        
+        user_genres = UserGenres.query.filter_by(username=username).first()
+        user_genres_list = user_genres.genres.split(',') if user_genres else []
+
+        # Map the detected emotions to genres
+        genre_results = []
+        for emotion in emotions:
+            genres = emotion_to_genre.get(emotion, ['Unknown'])
+            genre_results.extend(genres)
+        
+        # Merge and deduplicate genres
+        combined_genres = list(set(user_genres_list + genre_results))
+        
+        response = {
+            'emotions': emotions,
+            'combined_genres': combined_genres
+        }
+        return response, 200
+    
     except Exception as e:
         logging.error(f'Error: {e}')
         return 'Something went wrong', 500
