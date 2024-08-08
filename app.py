@@ -141,7 +141,7 @@ def detect_emotion_route():
         
         user_genres = UserGenres.query.filter_by(username=username).first()
         if user_genres is None:
-            return 'User not found', 404
+            pass
         
         user_genres_list = user_genres.genres.split(',') if user_genres else []
 
