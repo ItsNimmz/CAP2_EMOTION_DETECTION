@@ -122,46 +122,46 @@ def detect_emotion(image):
 @app.route('/detect_emotion', methods=['POST'])
 def detect_emotion_route():
     try:
-        logging.info("Application started")
         if 'image' not in request.files:
             return jsonify({'error': 'No image provided'}), 400
         x = request.files['image']
 
         image = np.frombuffer(x.read(), np.uint8)
         image = cv2.imdecode(image, cv2.IMREAD_COLOR)
-
+        
         emotions = detect_emotion(image)
 
         if not emotions:
             return 'No faces detected', 400
         
-        
-        data = request.get_json()
-        username = data.get('username')
+        # Retrieve additional data from form data
+        username = request.form.get('profileName')
         if not username:
             return 'Username not provided', 400
         
         user_genres = UserGenres.query.filter_by(username=username).first()
+        if user_genres is None:
+            return 'User not found', 404
+        
         user_genres_list = user_genres.genres.split(',') if user_genres else []
 
-        # Map the detected emotions to genres
         genre_results = []
         for emotion in emotions:
             genres = emotion_to_genre.get(emotion, ['Unknown'])
             genre_results.extend(genres)
         
-        # Merge and deduplicate genres
         combined_genres = list(set(user_genres_list + genre_results))
         
         response = {
             'emotions': emotions,
             'combined_genres': combined_genres
         }
-        return response, 200
+        return jsonify(response), 200
     
     except Exception as e:
         logging.error(f'Error: {e}')
         return 'Something went wrong', 500
+
     
 @app.route('/')
 def home():
@@ -290,6 +290,7 @@ def recommend_songs(song_name, artist_name, num_songs_to_output, scaler_choice, 
 # Route for the main page
 @app.route("/recommender", methods=["GET", "POST"])
 def index():
+
     if request.method == "POST":
         song_name = request.form.get("song_name")
         artist_name = request.form.get("artist_name")
