@@ -16,6 +16,7 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import os
 import logging
 import psutil
+import requests
 
 app = Flask(__name__)
 
@@ -87,6 +88,17 @@ face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fronta
 # Define emotion labels
 emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
 
+
+emotion_to_genre = {
+    'Angry': ['Rock', 'Metal', 'Punk', 'Hard Rock', 'Alternative'],
+    'Disgust': ['Heavy Metal', 'Industrial', 'Gothic', 'Darkwave', 'EBM'],
+    'Fear': ['Thriller', 'Dark Ambient', 'Experimental', 'Post-Rock', 'Noise'],
+    'Happy': ['Pop', 'Dance', 'Reggae', 'Indie Pop', 'Funk'],
+    'Sad': ['Blues', 'Folk', 'Soul', 'Country', 'Acoustic'],
+    'Surprise': ['Electronic', 'Jazz', 'Experimental', 'Funk', 'Psychedelic'],
+    'Neutral': ['Classical', 'Instrumental', 'Chillout', 'Ambient', 'New Age']
+}
+
 def detect_emotion(image):
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
@@ -110,24 +122,47 @@ def detect_emotion(image):
 @app.route('/detect_emotion', methods=['POST'])
 def detect_emotion_route():
     try:
-        logging.info("Application started")
         if 'image' not in request.files:
             return jsonify({'error': 'No image provided'}), 400
         x = request.files['image']
 
         image = np.frombuffer(x.read(), np.uint8)
         image = cv2.imdecode(image, cv2.IMREAD_COLOR)
-
+        
         emotions = detect_emotion(image)
 
-        if emotions:
-            return emotions, 200
-        else:
+        if not emotions:
             return 'No faces detected', 400
+        
+        # Retrieve additional data from form data
+        username = request.form.get('profileName')
+        if not username:
+            return 'Username not provided', 400
+        
+        user_genres = UserGenres.query.filter_by(username=username).first()
+        if user_genres is None:
+            pass
+        
+        user_genres_list = user_genres.genres.split(',') if user_genres else []
+
+        genre_results = []
+        for emotion in emotions:
+            genres = emotion_to_genre.get(emotion, ['Unknown'])
+            genre_results.extend(genres)
+        
+        combined_genres = list(set(user_genres_list + genre_results))
+        
+        response = {
+            'emotions': emotions,
+            'combined_genres': combined_genres
+        }
+        return jsonify(response), 200
+    
     except Exception as e:
-        print(f'Error: {e}')
+        logging.error(f'Error: {e}')
         return 'Something went wrong', 500
 
+    
 @app.route('/')
 def home():
    return render_template('index.html')
@@ -147,6 +182,27 @@ sp = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials(
     client_id='33923fe14a9d46049601501e59066d27',
     client_secret='52f295db11274f6db62ef7585d7e1cd1'))
 
+# Function to search for a song on Spotify
+
+def search_song_on_spotify(token, query):
+    url = 'https://api.spotify.com/v1/search'
+    headers = {'Authorization': f'Bearer {token}'}
+    params = {'q': query, 'type': 'track', 'limit': 1}  # Added 'limit': 1 to reduce response size
+    response = requests.get(url, headers=headers, params=params)
+    response_data = response.json()
+    
+    # Debugging Information
+    print("Response Status Code:", response.status_code)
+    print("Response Data:", response_data)
+    
+    # Check if there are any tracks in the response
+    if 'tracks' in response_data and 'items' in response_data['tracks'] and len(response_data['tracks']['items']) > 0:
+        return True
+    else:
+        return False
+
+
+
 # Define features for scaling and calculations
 features = ['popularity', 'danceability', 'energy', 'loudness', 'speechiness', 
             'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo']
@@ -160,7 +216,6 @@ tracks_data = tracks_data[(tracks_data['popularity'] > 40) & (tracks_data['instr
 logging.info("Track data loaded and processed")
 log_memory_usage()
 
-#Function to fetch a song from Spotify
 def get_song_from_spotify(song_name, artist_name=None):
     try:
         search_query = song_name if not artist_name else f"{song_name} artist:{artist_name}"
@@ -235,21 +290,37 @@ def recommend_songs(song_name, artist_name, num_songs_to_output, scaler_choice, 
 # Route for the main page
 @app.route("/recommender", methods=["GET", "POST"])
 def index():
+
     if request.method == "POST":
         song_name = request.form.get("song_name")
         artist_name = request.form.get("artist_name")
-        num_songs_to_output = request.form.get("num_songs_to_output", 5)
+        num_songs_to_output = int(request.form.get("num_songs_to_output", 5))
         scaler_choice = request.form.get("scaler_choice")
-        weights = [request.form.get(f"weight_{feature}", 1/len(features)) for feature in features]
+        weights = [float(request.form.get(f"weight_{feature}", 1/len(features))) for feature in features]
         
         recommendations, message = recommend_songs(song_name, artist_name, num_songs_to_output, scaler_choice, *weights)
         
         if not isinstance(recommendations, pd.DataFrame):
             recommendations = pd.DataFrame(columns=['name', 'artists'])  # Ensure recommendations is a DataFrame
-            
-        return render_template("rec.html", recommendations=recommendations.to_dict(orient='records'), message=message)
+        
+        # Convert DataFrame to a list of dictionaries
+        recommendations_list = recommendations.to_dict(orient='records')
+        
+        # Create the response dictionary
+        response = {
+            'recommendations': recommendations_list,
+            'message': message
+        }
+        
+        return jsonify(response)
     
-    return render_template("rec.html", recommendations=[], message="")
+    # For GET requests or when no POST data is provided
+    response = {
+        'recommendations': [],
+        'message': ""
+    }
+    
+    return jsonify(response)
 
 if __name__ == '__main__':
     app.run(debug=True)
