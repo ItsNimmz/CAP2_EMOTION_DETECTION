@@ -105,19 +105,33 @@ def detect_emotion(image):
 
     emotions = []
 
+    # for (x, y, w, h) in faces:
+    #     roi_gray = gray_image[y:y+h, x:x+w]
+    #     roi_gray = cv2.resize(roi_gray, (48, 48))
+    #     roi_gray = roi_gray.astype('float32') / 255
+    #     roi_gray = np.expand_dims(roi_gray, axis=0)
+    #     roi_gray = np.expand_dims(roi_gray, axis=-1)
+        
+    #     prediction = model.predict(roi_gray)
+    #     max_index = np.argmax(prediction[0])
+    #     emotion = emotion_labels[max_index]
+    #     emotions.append(emotion)
+
+    # return emotions
     for (x, y, w, h) in faces:
         roi_gray = gray_image[y:y+h, x:x+w]
         roi_gray = cv2.resize(roi_gray, (48, 48))
         roi_gray = roi_gray.astype('float32') / 255
         roi_gray = np.expand_dims(roi_gray, axis=0)
         roi_gray = np.expand_dims(roi_gray, axis=-1)
-        
+    
         prediction = model.predict(roi_gray)
         max_index = np.argmax(prediction[0])
         emotion = emotion_labels[max_index]
         emotions.append(emotion)
 
-    return emotions
+        del roi_gray, prediction  # Free memory for each iteration
+
 
 @app.route('/detect_emotion', methods=['POST'])
 def detect_emotion_route():
