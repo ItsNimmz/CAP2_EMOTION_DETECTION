@@ -13,3 +13,6 @@ rapidfuzz
 spotipy
 psutil
 flask_sqlalchemy
+torch==2.0.0+cu117
+torchvision==0.15.1+cu117
+torchaudio==2.0.1+cu117
