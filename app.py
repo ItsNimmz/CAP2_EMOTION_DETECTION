@@ -17,6 +17,7 @@ import os
 import logging
 import psutil
 import requests
+import gc
 
 app = Flask(__name__)
 
@@ -99,40 +100,65 @@ emotion_to_genre = {
     'Neutral': ['Classical', 'Instrumental', 'Chillout', 'Ambient', 'New Age']
 }
 
-def detect_emotion(image):
-    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+# def detect_emotion(image):
+#     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+#     faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
 
+#     emotions = []
+
+#     for (x, y, w, h) in faces:
+#         roi_gray = gray_image[y:y+h, x:x+w]
+#         roi_gray = cv2.resize(roi_gray, (48, 48))
+#         roi_gray = roi_gray.astype('float32') / 255
+#         roi_gray = np.expand_dims(roi_gray, axis=0)
+#         roi_gray = np.expand_dims(roi_gray, axis=-1)
+        
+#         prediction = model.predict(roi_gray)
+#         max_index = np.argmax(prediction[0])
+#         emotion = emotion_labels[max_index]
+#         emotions.append(emotion)
+
+#     return emotions
+def detect_emotion(image):
+    # Convert the image to grayscale and immediately delete the original image to save memory
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    del image  # Free up memory
+
+    # Detect faces in the grayscale image
+    faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
     emotions = []
 
-    # for (x, y, w, h) in faces:
-    #     roi_gray = gray_image[y:y+h, x:x+w]
-    #     roi_gray = cv2.resize(roi_gray, (48, 48))
-    #     roi_gray = roi_gray.astype('float32') / 255
-    #     roi_gray = np.expand_dims(roi_gray, axis=0)
-    #     roi_gray = np.expand_dims(roi_gray, axis=-1)
-        
-    #     prediction = model.predict(roi_gray)
-    #     max_index = np.argmax(prediction[0])
-    #     emotion = emotion_labels[max_index]
-    #     emotions.append(emotion)
-
-    # return emotions
     for (x, y, w, h) in faces:
+        # Extract the region of interest (ROI) for each face
         roi_gray = gray_image[y:y+h, x:x+w]
+        
+        # Resize ROI to the required size for the model
         roi_gray = cv2.resize(roi_gray, (48, 48))
-        roi_gray = roi_gray.astype('float32') / 255
+
+        # Convert to float16 to save memory and normalize the image
+        roi_gray = roi_gray.astype('float16') / 255
+
+        # Expand dimensions to fit the model's expected input shape
         roi_gray = np.expand_dims(roi_gray, axis=0)
         roi_gray = np.expand_dims(roi_gray, axis=-1)
-    
+
+        # Predict the emotion using the model
         prediction = model.predict(roi_gray)
         max_index = np.argmax(prediction[0])
+
+        # Get the emotion label and append to the results
         emotion = emotion_labels[max_index]
         emotions.append(emotion)
 
-        del roi_gray, prediction  # Free memory for each iteration
+        # Free up memory used by intermediate variables
+        del roi_gray, prediction
+        gc.collect()  # Explicitly run garbage collection
 
+    # Free up memory used by grayscale image and face coordinates
+    del gray_image, faces
+    gc.collect()  # Run garbage collection
 
+    return emotions
 @app.route('/detect_emotion', methods=['POST'])
 def detect_emotion_route():
     try:
