@@ -18,6 +18,7 @@ import logging
 import psutil
 import requests
 import gc
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -37,6 +38,17 @@ class UserGenres(db.Model):
         self.username = username
         self.genres = genres
 
+# Define the Feedback model
+class Feedback(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), nullable=False)
+    feedback = db.Column(db.String(500), nullable=False)
+    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    def __init__(self, username, feedback, date=None):
+        self.username = username
+        self.feedback = feedback
+        self.date = date 
 
 # Create the database and the table
 with app.app_context():
@@ -66,6 +78,23 @@ def save_genres():
         return jsonify({'message': 'Genres saved successfully'}), 200
     else:
         return jsonify({'message': 'Invalid data'}), 400
+
+@app.route('/save-feedback', methods=['POST'])
+def save_feedback():
+    data = request.get_json()
+    username = data.get('username')
+    feedback_text = data.get('feedback')
+
+    if username and feedback_text:
+        # Insert new feedback entry
+        new_feedback = Feedback(username=username, feedback=feedback_text)
+        db.session.add(new_feedback)
+        db.session.commit()
+        
+        return jsonify({'message': 'Feedback saved successfully'}), 200
+    else:
+        return jsonify({'message': 'Invalid data'}), 400
+    
 
 @app.route('/get-genres/<username>', methods=['GET'])
 def get_genres(username):
