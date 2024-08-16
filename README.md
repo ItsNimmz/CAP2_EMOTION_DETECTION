@@ -38,3 +38,7 @@ All dependencies are listed in the requirements.txt file.
 ```bash
 git clone https://github.com/ItsNimmz/CAP2_EMOTION_DETECTION.git
 cd CAP2_EMOTION_DETECTION
+
+**Install the required dependencies**:
+```bash
+pip install -r requirements.txt
